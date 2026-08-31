@@ -1,0 +1,6 @@
+{
+  "name": "Bill Splitter",
+  "description": "Mobile fintech app to split bills with friends, track shared expenses, and manage group budgets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

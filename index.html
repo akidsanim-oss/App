@@ -1,40 +1,790 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Spark — creativity powerhouse. For over 20 years we've helped brands rediscover their essence and stand out through collaboration, creativity and technology." />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet" />
-    <title>Spark — Creativity Powerhouse</title>
-    <script data-arena-recording="true">(function(){
-"use strict";
-var SK="__arena_rec",RRWEB_CDN="https://cdn.jsdelivr.net/npm/rrweb@2.0.0-alpha.4/dist/rrweb.min.js";
-var MAX_RECORDING_MS=600000,MAX_RRWEB_EVENTS=30000,MAX_INTERACTIONS=5000,MAX_CURSOR_POINTS=10000,recStopped=false;
-var stored=null;try{var raw=sessionStorage.getItem(SK);if(raw)stored=JSON.parse(raw);}catch(ex){}
-var meta=stored?stored.m||null:null,rrwebEvents=stored?stored.r||[]:[],rrwebStarted=false,startTime=stored?stored.st||Date.now():Date.now();
-var interactions=stored?stored.i||[]:[],cursorPath=stored?stored.c||[]:[],lastCursorSample=0,lastScrollSample=0;
-var pageHeight=document.documentElement.scrollHeight;
-var viewport={width:window.innerWidth,height:window.innerHeight};
-function isCapped(){if(recStopped)return true;if(Date.now()-startTime>=MAX_RECORDING_MS){recStopped=true;return true;}return false;}
-function persist(){try{var d=JSON.stringify({r:rrwebEvents,i:interactions,c:cursorPath,m:meta,st:startTime});sessionStorage.setItem(SK,d);}catch(ex){rrwebEvents=rrwebEvents.slice(Math.floor(rrwebEvents.length/2));try{sessionStorage.setItem(SK,JSON.stringify({r:rrwebEvents,i:interactions,c:cursorPath,m:meta,st:startTime}));}catch(ex2){}}}
-setInterval(persist,5000);
-window.addEventListener("resize",function(){viewport={width:window.innerWidth,height:window.innerHeight};pageHeight=document.documentElement.scrollHeight;});
-document.addEventListener("click",function(e){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;var el=e.target;var tag=el.tagName?el.tagName.toLowerCase():"";var text=(el.textContent||"").trim().substring(0,80);var classes=el.className&&typeof el.className==="string"?el.className.substring(0,120):"";interactions.push({type:"click",t:Date.now()-startTime,x:Math.round(e.clientX),y:Math.round(e.clientY),element:{tag:tag,text:text,classes:classes}});},true);
-window.addEventListener("scroll",function(){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;var now=Date.now();if(now-lastScrollSample<200)return;lastScrollSample=now;var scrollY=Math.round(window.scrollY||window.pageYOffset||0);var depthPct=pageHeight>viewport.height?Math.min(100,Math.round(((scrollY+viewport.height)/pageHeight)*100)):100;interactions.push({type:"scroll",t:now-startTime,y:scrollY,depth_pct:depthPct});},{passive:true});
-document.addEventListener("mousemove",function(e){if(isCapped()||cursorPath.length>=MAX_CURSOR_POINTS)return;var now=Date.now();if(now-lastCursorSample<250)return;lastCursorSample=now;cursorPath.push([Math.round(e.clientX),Math.round(e.clientY),now-startTime]);},{passive:true});
-document.addEventListener("keydown",function(e){if(isCapped()||interactions.length>=MAX_INTERACTIONS)return;if(e.target&&(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA"))return;interactions.push({type:"keydown",t:Date.now()-startTime,key:e.key});},true);
-function buildAnalytics(){if(!meta)return null;var ph=document.documentElement.scrollHeight;var maxScroll=0,clickElements={},firstClick=null,firstScroll=null,totalDistance=0;for(var i=0;i<interactions.length;i++){var ev=interactions[i];if(ev.type==="scroll"){if(ev.depth_pct>maxScroll)maxScroll=ev.depth_pct;if(!firstScroll)firstScroll=ev.t;}if(ev.type==="click"){if(!firstClick)firstClick=ev.t;var key=ev.element.tag+":"+ev.element.text.substring(0,30);clickElements[key]=true;}}for(var j=1;j<cursorPath.length;j++){var dx=cursorPath[j][0]-cursorPath[j-1][0];var dy=cursorPath[j][1]-cursorPath[j-1][1];totalDistance+=Math.sqrt(dx*dx+dy*dy);}var duration=Date.now()-startTime;var clickHeatmap=[];for(var k=0;k<interactions.length;k++){if(interactions[k].type==="click")clickHeatmap.push([interactions[k].x,interactions[k].y]);}return{generation_id:meta.generationId,tournament_id:meta.tournamentId,started_at:new Date(startTime).toISOString(),ended_at:new Date().toISOString(),duration_ms:duration,viewport:viewport,page_height:ph,interactions:interactions,cursor_path:cursorPath,click_heatmap:clickHeatmap,summary:{total_clicks:clickHeatmap.length,total_scrolls:interactions.filter(function(e){return e.type==="scroll";}).length,max_scroll_depth_pct:maxScroll,unique_elements_clicked:Object.keys(clickElements).length,time_to_first_click_ms:firstClick,time_to_first_scroll_ms:firstScroll,cursor_distance_px:Math.round(totalDistance),active_time_ms:duration}};}
-function loadRrweb(){if(rrwebStarted)return;rrwebStarted=true;var s=document.createElement("script");s.src=RRWEB_CDN;s.onload=function(){var rec=(window.rrweb&&window.rrweb.record)||window.rrwebRecord;if(!rec)return;rec({emit:function(event){if(rrwebEvents.length>=MAX_RRWEB_EVENTS||isCapped())return;rrwebEvents.push(event);}});};s.onerror=function(){};document.head.appendChild(s);}
-window.addEventListener("message",function(e){if(!e.data||typeof e.data.type!=="string")return;if(e.data.type==="arena:init"){if(!meta)startTime=Date.now();meta={generationId:e.data.generationId||e.data.modelId,tournamentId:e.data.tournamentId};persist();loadRrweb();if(e.source)e.source.postMessage({type:"arena:init-ack",generationId:meta.generationId},"*");}if(e.data.type==="arena:flush"){var resp={type:"arena:recording-data",generationId:meta?meta.generationId:null,rrwebEvents:rrwebEvents,analytics:buildAnalytics()};try{sessionStorage.removeItem(SK);}catch(ex){}if(e.source)e.source.postMessage(resp,"*");}});
-loadRrweb();
-})();</script>
-  <script data-arena-views="true">(function(){var isTop=false;try{isTop=window.self===window.top;}catch(e){}if(!isTop)return;window.__ARENA_META={generationId:"odysseus",tournamentId:"205ea6a1-30f6-4bbf-a135-b7855a01628b"};var payload={tournamentId:"205ea6a1-30f6-4bbf-a135-b7855a01628b",modelId:"odysseus"};try{var r=document.referrer;if(r){var u=new URL(r);payload.referrerDomain=u.hostname;}}catch(e){}try{var vid=null;try{vid=localStorage.getItem('arena_vid');}catch(e){}if(!vid){vid=typeof crypto!=="undefined"&&crypto.randomUUID?crypto.randomUUID():(Date.now().toString(36)+Math.random().toString(36).slice(2)).slice(0,32);try{localStorage.setItem('arena_vid',vid);}catch(e){}}if(vid)payload.viewerId=vid;}catch(e){}try{fetch("https://www.designarena.ai/api/agon/page-views",{"method":"POST","headers":{"Content-Type":"application/json"},"body":JSON.stringify(payload),"keepalive":true});}catch(e){}})();</script>
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Robinhood Agentic Trading | Market Access for AI Agents</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        rh: {
+                            green: '#00C805',
+                            darkgreen: '#003B00',
+                            bright: '#22EB55',
+                            dark: '#050505',
+                            card: '#0D0D0E',
+                            border: '#1E1E22',
+                            subtext: '#9CA3AF'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        glow: {
+                            '0%': { opacity: '0.4', filter: 'drop-shadow(0 0 15px rgba(0, 200, 5, 0.2))' },
+                            '100%': { opacity: '0.8', filter: 'drop-shadow(0 0 30px rgba(0, 200, 5, 0.5))' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        body {
+            background-color: #050505;
+            color: #FFFFFF;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            selection-background-color: #00C805;
+            selection-color: #000000;
+        }
+
+        ::selection {
+            background-color: #00C805;
+            color: #000000;
+        }
+
+        .grid-pattern {
+            background-size: 40px 40px;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        }
+
+        .glass-panel {
+            background: rgba(13, 13, 14, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card-hover {
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card-hover:hover {
+            border-color: rgba(0, 200, 5, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px -10px rgba(0, 200, 5, 0.15);
+        }
+
+        .neon-glow {
+            box-shadow: 0 0 35px -5px rgba(0, 200, 5, 0.3);
+        }
+
+        .terminal-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .terminal-scroll::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        .terminal-scroll::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 2px;
+        }
+    </style>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<body class="min-h-screen relative bg-[#050505] text-gray-100 flex flex-col justify-between">
+
+    <!-- Background Grid & Glows -->
+    <div class="fixed inset-0 grid-pattern pointer-events-none z-0"></div>
+    <div class="fixed top-[-10%] left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-rh-green/10 rounded-full blur-[140px] pointer-events-none z-0"></div>
+    <div class="fixed bottom-0 right-[-10%] w-[500px] h-[500px] bg-rh-green/5 rounded-full blur-[150px] pointer-events-none z-0"></div>
+
+    <!-- Navigation Bar -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-white/5 px-6 lg:px-12 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <a href="#" class="flex items-center gap-2 group">
+                    <svg class="w-8 h-8 text-rh-green transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.2L19 8.6v7.8L12 20.2l-7-3.8V8.6l7-4.4z"/>
+                        <path d="M12 6L6 9.5v5l6 3.5 6-3.5v-5L12 6z" fill="#00C805"/>
+                    </svg>
+                    <div class="flex items-center">
+                        <span class="font-bold text-lg tracking-tight text-white">Robinhood</span>
+                        <span class="ml-2 text-xs uppercase px-2 py-0.5 rounded-full bg-rh-green/10 text-rh-bright border border-rh-green/30 font-mono tracking-wider font-semibold">Agentic Beta</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Desktop Nav Links -->
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-300">
+                <a href="#overview" class="hover:text-rh-green transition-colors">Overview</a>
+                <a href="#bring-agent" class="hover:text-rh-green transition-colors">Capabilities</a>
+                <a href="#setup" class="hover:text-rh-green transition-colors">Setup in Minutes</a>
+                <a href="#safety" class="hover:text-rh-green transition-colors">Safety Guardrails</a>
+                <a href="#simulator" class="hover:text-rh-green transition-colors">MCP Playground</a>
+            </nav>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center gap-4">
+                <button onclick="openDisclosureModal()" class="text-xs text-gray-400 hover:text-white transition-colors underline-offset-4 hover:underline hidden sm:block">
+                    Agentic Disclosures
+                </button>
+                <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" rel="noopener noreferrer" 
+                   class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-black bg-rh-green hover:bg-rh-bright rounded-full transition-all duration-200 shadow-md hover:shadow-rh-green/20 hover:scale-[1.02] active:scale-95">
+                    <span>Get started</span>
+                    <i data-lucide="arrow-up-right" class="w-4 h-4 ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="relative z-10">
+
+        <!-- HERO SECTION -->
+        <section id="overview" class="pt-16 pb-20 px-6 lg:px-12 max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Hero Left: Text & CTA -->
+                <div class="lg:col-span-6 space-y-6 text-left">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-gray-300">
+                        <span class="w-2 h-2 rounded-full bg-rh-green animate-ping"></span>
+                        <span>Robinhood Model Context Protocol (MCP) Live</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <p class="text-xs uppercase tracking-widest font-mono text-rh-green font-bold">##### Agentic Trading</p>
+                        <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-[1.1]">
+                            Let your <span class="text-transparent bg-clip-text bg-gradient-to-r from-rh-green via-rh-bright to-emerald-300">agent trade</span>
+                        </h1>
+                    </div>
+
+                    <p class="text-lg sm:text-xl text-gray-300 leading-relaxed font-normal">
+                        Market access for AI agents. Now available for <span class="text-white font-medium">equities</span>, <span class="text-white font-medium">options</span>, and <span class="text-white font-medium">crypto</span> through Robinhood’s MCP server.
+                    </p>
+
+                    <!-- Supported Asset Badges -->
+                    <div class="flex flex-wrap gap-2 pt-1 text-xs font-mono">
+                        <span class="px-3 py-1 rounded bg-white/5 border border-white/10 text-gray-300 flex items-center gap-1.5">
+                            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-rh-green"></i> Equities (US Stocks & ETFs)
+                        </span>
+                        <span class="px-3 py-1 rounded bg-white/5 border border-white/10 text-gray-300 flex items-center gap-1.5">
+                            <i data-lucide="layers" class="w-3.5 h-3.5 text-rh-green"></i> Multi-leg Options
+                        </span>
+                        <span class="px-3 py-1 rounded bg-white/5 border border-white/10 text-gray-300 flex items-center gap-1.5">
+                            <i data-lucide="zap" class="w-3.5 h-3.5 text-rh-green"></i> 24/7 Crypto
+                        </span>
+                    </div>
+
+                    <!-- CTA Group -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 pt-4">
+                        <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" rel="noopener noreferrer"
+                           class="w-full sm:w-auto px-7 py-3.5 text-base font-bold text-black bg-rh-green hover:bg-rh-bright rounded-full transition-all duration-200 text-center shadow-lg hover:shadow-rh-green/30 flex items-center justify-center gap-2">
+                            <span>Get started</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </a>
+                        <button onclick="openDisclosureModal()" class="w-full sm:w-auto px-6 py-3.5 text-sm font-semibold text-gray-300 hover:text-white rounded-full border border-white/15 hover:border-white/30 transition-all text-center">
+                            Agentic Disclosures
+                        </button>
+                    </div>
+
+                    <div class="flex items-center gap-4 text-xs text-gray-400 pt-2">
+                        <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-4 h-4 text-rh-green"></i> Dedicated Budget Isolation</span>
+                        <span class="flex items-center gap-1"><i data-lucide="bell" class="w-4 h-4 text-rh-green"></i> Instant Push Alerts</span>
+                    </div>
+                </div>
+
+                <!-- Hero Right: Hero Image & Dynamic Hologram Frame -->
+                <div class="lg:col-span-6 relative">
+                    <div class="relative rounded-2xl overflow-hidden glass-panel border border-white/10 p-2 group">
+                        <div class="absolute inset-0 bg-gradient-to-tr from-rh-green/10 via-transparent to-transparent pointer-events-none"></div>
+                        <img src="https://images.ctfassets.net/ilblxxee70tt/3JCwEG6urEf7yxcO5QWfCt/a83df821c4661b85b59c6363e7caa602/Hero_Static.png" 
+                             alt="Robinhood Agentic Trading Hero" 
+                             class="w-full h-auto rounded-xl object-cover transition-transform duration-700 group-hover:scale-[1.02]">
+                        
+                        <!-- Floating Badge Status -->
+                        <div class="absolute bottom-6 left-6 right-6 p-4 rounded-xl glass-panel border border-rh-green/30 backdrop-blur-md flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-3 h-3 rounded-full bg-rh-green animate-ping"></div>
+                                <div>
+                                    <div class="text-xs font-mono text-gray-400">MCP Protocol Status</div>
+                                    <div class="text-sm font-semibold text-white">mcp.robinhood.com: Ready</div>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-1 text-xs font-mono rounded bg-rh-green/20 text-rh-bright font-medium">Latency &lt;14ms</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- MCP CONFIG BAR (Interactive Copy Widget) -->
+        <section class="py-8 px-6 lg:px-12 max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl p-6 sm:p-8 border border-white/10 relative overflow-hidden">
+                <div class="absolute -right-16 -top-16 w-64 h-64 bg-rh-green/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="terminal" class="w-5 h-5 text-rh-green"></i>
+                            <h3 class="font-bold text-lg text-white">One-Click MCP Integration</h3>
+                        </div>
+                        <p class="text-sm text-gray-400 max-w-xl">
+                            Paste Robinhood's MCP endpoint configuration directly into Claude Desktop, Cursor, Cline, or your custom autonomous agent.
+                        </p>
+                    </div>
+
+                    <!-- Client Selector and Code Snippet -->
+                    <div class="w-full md:w-auto flex-1 max-w-lg">
+                        <div class="bg-black/80 rounded-xl border border-white/10 p-3 font-mono text-xs text-gray-300 flex items-center justify-between gap-3">
+                            <div class="truncate flex items-center gap-2">
+                                <span class="text-rh-green select-none">$</span>
+                                <span class="text-gray-200 select-all" id="mcpConfigText">"robinhood": { "url": "https://mcp.robinhood.com/v1" }</span>
+                            </div>
+                            <button id="copyBtn" onclick="copyMcpSnippet()" class="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-sans text-xs flex items-center gap-1.5 transition-all">
+                                <i data-lucide="copy" class="w-3.5 h-3.5" id="copyIcon"></i>
+                                <span id="copyBtnLabel">Copy</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: BRING YOUR AGENT -->
+        <section id="bring-agent" class="py-24 px-6 lg:px-12 max-w-7xl mx-auto border-t border-white/5">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Visual / Terminal Image -->
+                <div class="lg:col-span-6 order-2 lg:order-1">
+                    <div class="relative group">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-rh-green/20 to-emerald-600/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-100 transition duration-1000"></div>
+                        <div class="relative rounded-2xl overflow-hidden glass-panel border border-white/10 shadow-2xl">
+                            <img src="https://images.ctfassets.net/ilblxxee70tt/2Io4L5bVzk8z1uRiVm3aVK/c0e14e87ba15c07effb065a5dd5139b3/Visual_Terminal___Agent_Visual.png" 
+                                 alt="Robinhood Terminal and Agent Visual" 
+                                 class="w-full h-auto object-cover">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Description -->
+                <div class="lg:col-span-6 space-y-6 order-1 lg:order-2">
+                    <div class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-rh-green font-semibold">
+                        <i data-lucide="cpu" class="w-4 h-4"></i> Autonomous Execution
+                    </div>
+
+                    <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Bring your agent
+                    </h2>
+
+                    <p class="text-gray-300 text-lg leading-relaxed">
+                        Connect your AI agent to a Robinhood Agentic Account to explore trade ideas, build and rebalance portfolios, program custom tools, and place trades as your strategy evolves.
+                    </p>
+
+                    <!-- Feature Matrix Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-rh-green/40 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green mb-3">
+                                <i data-lucide="brain-circuit" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-white text-base mb-1">Explore Trade Ideas</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed">Query financial fundamentals, scanner filters, news sentiment, and volatility metrics.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-rh-green/40 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green mb-3">
+                                <i data-lucide="pie-chart" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-white text-base mb-1">Build & Rebalance</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed">Execute automated portfolio rebalancing routines based on customized risk-weight targets.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-rh-green/40 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green mb-3">
+                                <i data-lucide="code" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-white text-base mb-1">Custom Tool Schemas</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed">Expose Robinhood MCP functions as structured schemas to LangChain, AutoGPT, or custom LLMs.</p>
+                        </div>
+
+                        <div class="p-4 rounded-xl bg-white/[0.03] border border-white/10 hover:border-rh-green/40 transition-colors">
+                            <div class="w-8 h-8 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green mb-3">
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                            </div>
+                            <h4 class="font-semibold text-white text-base mb-1">Adaptive Strategies</h4>
+                            <p class="text-xs text-gray-400 leading-relaxed">Scale positions up or hedge downside protection dynamically in real-time response to market changes.</p>
+                        </div>
+                    </div>
+
+                    <!-- CTA links -->
+                    <div class="flex items-center gap-6 pt-4">
+                        <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center gap-2 text-rh-green hover:text-rh-bright font-semibold text-base transition-colors group">
+                            <span>Get started with your agent</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
+                        </a>
+                        <button onclick="openDisclosureModal()" class="text-xs text-gray-400 hover:text-white underline underline-offset-4">
+                            Agentic Disclosures
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <!-- INTERACTIVE LIVE AGENT & MCP SIMULATOR -->
+        <section id="simulator" class="py-16 px-6 lg:px-12 max-w-7xl mx-auto">
+            <div class="glass-panel rounded-2xl border border-white/10 p-6 lg:p-8 bg-gradient-to-b from-[#0D0D0E] to-[#080809]">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                    <div>
+                        <div class="flex items-center gap-2 text-rh-green text-xs font-mono font-bold uppercase tracking-wider mb-1">
+                            <i data-lucide="activity" class="w-4 h-4"></i> Live Simulation Terminal
+                        </div>
+                        <h3 class="text-2xl font-bold text-white">Watch an Agent Interact with Robinhood's MCP</h3>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="runSimulationStep()" class="px-4 py-2 rounded-lg bg-rh-green hover:bg-rh-bright text-black font-semibold text-xs flex items-center gap-2 transition-all">
+                            <i data-lucide="play" class="w-3.5 h-3.5"></i> Trigger Agent Action
+                        </button>
+                        <button onclick="clearTerminal()" class="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-mono transition-all">
+                            Clear Log
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Terminal Display -->
+                <div class="mt-6 rounded-xl bg-black border border-white/10 p-4 sm:p-6 font-mono text-xs sm:text-sm text-gray-300">
+                    <div class="flex items-center justify-between pb-3 mb-3 border-b border-white/10 text-gray-400 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500/80"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500/80"></span>
+                            <span class="ml-2 text-gray-400">agent_runtime_session: stdio://mcp.robinhood.com</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-rh-green">●</span> Connected
+                        </div>
+                    </div>
+
+                    <div id="terminalStream" class="space-y-3 min-h-[220px] max-h-[320px] overflow-y-auto terminal-scroll pr-2 text-left">
+                        <div class="text-gray-400">
+                            <span class="text-blue-400 font-semibold">[AGENT INIT]</span> Initialized Robinhood MCP connection over secure session...
+                        </div>
+                        <div class="text-gray-400">
+                            <span class="text-yellow-400 font-semibold">[ACCOUNT]</span> Agentic Sub-Account detected. Reserved Trading Capital: <span class="text-white">$5,000.00 USD</span>.
+                        </div>
+                        <div class="text-gray-400">
+                            <span class="text-emerald-400 font-semibold">[TOOLS LOADED]</span> <span class="text-gray-300">`robinhood.get_quote`</span>, <span class="text-gray-300">`robinhood.place_order`</span>, <span class="text-gray-300">`robinhood.get_positions`</span>, <span class="text-gray-300">`robinhood.rebalance`</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SET UP IN MINUTES (3 STEPS) -->
+        <section id="setup" class="py-24 px-6 lg:px-12 max-w-7xl mx-auto border-t border-white/5">
+            <div class="text-center max-w-2xl mx-auto mb-16 space-y-4">
+                <p class="text-xs uppercase tracking-widest font-mono text-rh-green font-bold">Fast & Intuitive Integration</p>
+                <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">Set up in minutes</h2>
+                <p class="text-gray-400 text-base">Connect any standard MCP-compatible model, allocate safety funds, and initiate execution in three frictionless steps.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <!-- STEP 01 -->
+                <div class="glass-panel glass-card-hover rounded-2xl p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden group">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-4xl font-extrabold text-rh-green/40 group-hover:text-rh-green transition-colors">01</span>
+                            <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-3 group-hover:border-rh-green/40 transition-colors">
+                                <img src="https://images.ctfassets.net/ilblxxee70tt/2AZRZGEvLXWhq9UJENzU3t/f759b45c3fd8bbb7b8523dee24681d8d/clip.svg" 
+                                     alt="Connect MCP Icon" 
+                                     class="w-8 h-8 object-contain">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-2">Connect via MCP</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Paste one URL into your MCP config to connect most agents out of the box.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/5 mt-8">
+                        <div class="text-xs font-mono text-gray-300 flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4 text-rh-green"></i> Compatible with Claude & Cursor
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 02 -->
+                <div class="glass-panel glass-card-hover rounded-2xl p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden group">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-4xl font-extrabold text-rh-green/40 group-hover:text-rh-green transition-colors">02</span>
+                            <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-3 group-hover:border-rh-green/40 transition-colors">
+                                <img src="https://images.ctfassets.net/ilblxxee70tt/7ID1RNd50LtmydAoNr90xT/7c7274aab877e1851f19569f2db80c71/plus-icon.svg" 
+                                     alt="Create Account Icon" 
+                                     class="w-8 h-8 object-contain">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-2">Create an agentic account</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Fund your account with an amount reserved for your agent’s trades.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/5 mt-8">
+                        <div class="text-xs font-mono text-gray-300 flex items-center gap-2">
+                            <i data-lucide="shield" class="w-4 h-4 text-rh-green"></i> Isolated capital pool protection
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 03 -->
+                <div class="glass-panel glass-card-hover rounded-2xl p-8 border border-white/10 flex flex-col justify-between relative overflow-hidden group">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <span class="font-mono text-4xl font-extrabold text-rh-green/40 group-hover:text-rh-green transition-colors">03</span>
+                            <div class="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-3 group-hover:border-rh-green/40 transition-colors">
+                                <img src="https://images.ctfassets.net/ilblxxee70tt/1YMYSbYHoABTxG9dDOWci9/7c15b51ae12e83dc303a6f1dc3806629/finance.svg" 
+                                     alt="Run Strategy Icon" 
+                                     class="w-8 h-8 object-contain">
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-bold text-white mb-2">Run your strategy</h3>
+                            <p class="text-gray-400 text-sm leading-relaxed">
+                                Your agent can analyze markets and place trades, with activity and performance visible in the app.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/5 mt-8">
+                        <div class="text-xs font-mono text-gray-300 flex items-center gap-2">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-rh-green"></i> Live portfolio telemetry
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION: DESIGNED FOR SAFETY -->
+        <section id="safety" class="py-24 px-6 lg:px-12 max-w-7xl mx-auto border-t border-white/5">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                
+                <!-- Safety Content -->
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-rh-green font-semibold">
+                        <i data-lucide="lock" class="w-4 h-4"></i> Security & Risk Controls
+                    </div>
+
+                    <h2 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Designed for safety
+                    </h2>
+
+                    <p class="text-gray-300 text-lg leading-relaxed">
+                        Set your agent up for trading in an account with a dedicated budget, with notifications on each trade, and the option to disconnect anytime from directly in the app.
+                    </p>
+
+                    <!-- Safety Points -->
+                    <div class="space-y-4 pt-2">
+                        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                            <div class="w-10 h-10 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green shrink-0 mt-0.5">
+                                <i data-lucide="wallet" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white text-base">Dedicated Budget Caps</h4>
+                                <p class="text-sm text-gray-400">Agents operate solely within their segregated Agentic Account balance. Your primary Robinhood investments remain untouched.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                            <div class="w-10 h-10 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green shrink-0 mt-0.5">
+                                <i data-lucide="bell-ring" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white text-base">Real-Time Push Notifications</h4>
+                                <p class="text-sm text-gray-400">Instant trade fill alerts, order revisions, and strategy status messages sent immediately to your mobile device.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5">
+                            <div class="w-10 h-10 rounded-lg bg-rh-green/10 flex items-center justify-center text-rh-green shrink-0 mt-0.5">
+                                <i data-lucide="power" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white text-base">Instant Killswitch</h4>
+                                <p class="text-sm text-gray-400">Revoke agent authorization instantly with a single tap directly within the Robinhood app, freezing active orders.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA Link -->
+                    <div class="pt-4">
+                        <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" rel="noopener noreferrer" 
+                           class="inline-flex items-center justify-center px-7 py-3.5 text-base font-bold text-black bg-rh-green hover:bg-rh-bright rounded-full transition-all duration-200 shadow-md hover:shadow-rh-green/30">
+                            <span>Get started</span>
+                            <i data-lucide="chevron-right" class="w-4 h-4 ml-1"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Safety Image -->
+                <div class="lg:col-span-6 relative">
+                    <div class="relative rounded-2xl overflow-hidden glass-panel border border-white/10 group">
+                        <img src="https://images.ctfassets.net/ilblxxee70tt/5JL5JnQ1hNZcgG5SQD4NOF/a8942c28661e0755025a7fddce2f4d95/Frame_2147229804.png" 
+                             alt="Designed for safety Robinhood App screenshot" 
+                             class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-[1.01]">
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- CTA HERO BANNER -->
+        <section class="py-20 px-6 lg:px-12 max-w-7xl mx-auto">
+            <div class="relative rounded-3xl overflow-hidden glass-panel border border-rh-green/30 p-10 lg:p-16 text-center space-y-6">
+                <div class="absolute inset-0 bg-gradient-to-b from-rh-green/10 via-transparent to-transparent pointer-events-none"></div>
+                <div class="relative z-10 max-w-3xl mx-auto space-y-4">
+                    <h2 class="text-3xl sm:text-5xl font-black text-white tracking-tight">
+                        Empower your AI with real-world liquidity
+                    </h2>
+                    <p class="text-gray-300 text-base sm:text-lg">
+                        Equities, options, and crypto are now an API call away for autonomous models. Connect your agent through Robinhood’s MCP server today.
+                    </p>
+                    <div class="pt-6 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" rel="noopener noreferrer" 
+                           class="w-full sm:w-auto px-8 py-4 text-base font-bold text-black bg-rh-green hover:bg-rh-bright rounded-full transition-all duration-200 shadow-xl hover:shadow-rh-green/40 hover:scale-105">
+                            Get started now
+                        </a>
+                        <button onclick="openDisclosureModal()" class="w-full sm:w-auto px-6 py-4 text-sm font-semibold text-gray-300 hover:text-white rounded-full border border-white/20 hover:border-white/40">
+                            Read Agentic Disclosures
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER & COMPLIANCE DISCLOSURES -->
+    <footer class="relative z-10 border-t border-white/10 bg-[#080809] text-gray-400 text-xs py-12 px-6 lg:px-12">
+        <div class="max-w-7xl mx-auto space-y-8">
+            
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                <div class="flex items-center gap-2">
+                    <svg class="w-6 h-6 text-rh-green" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2L3 7v10l9 5 9-5V7l-9-5zm0 2.2L19 8.6v7.8L12 20.2l-7-3.8V8.6l7-4.4z"/>
+                    </svg>
+                    <span class="font-bold text-white tracking-tight">Robinhood Agentic Trading</span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-6 text-gray-400">
+                    <a href="https://robinhood.com/us/en/support/articles/agentic-trading-overview/#ConnectyourAIagent" target="_blank" class="hover:text-rh-green transition-colors">Documentation</a>
+                    <button onclick="openDisclosureModal()" class="hover:text-rh-green transition-colors">Agentic Disclosures</button>
+                    <a href="https://robinhood.com" target="_blank" class="hover:text-rh-green transition-colors">Robinhood.com</a>
+                </div>
+            </div>
+
+            <!-- Mandatory Legal Text -->
+            <div class="space-y-3 leading-relaxed text-[11px] text-gray-400">
+                <p>
+                    <strong class="text-gray-300">Important Disclaimer:</strong> References to third parties are for identification or descriptive purposes only and do not imply endorsement, sponsorship, or affiliation.
+                </p>
+                <p>
+                    Agentic Trading and AI-driven trade executions involve substantial risk of loss and are not suitable for every investor. The valuation of equities, options, and cryptocurrencies can fluctuate significantly. Automated agents may execute trades rapidly and unpredictably based on instructions, market liquidity, or algorithmic errors. You are solely responsible for all trades initiated through your connected MCP servers and Agentic Accounts.
+                </p>
+                <p>
+                    Options trading entails significant risk and is not appropriate for all customers. Customers must review the Characteristics and Risks of Standardized Options before trading. Crypto trading is offered through Robinhood Crypto, LLC. Securities trading is offered through Robinhood Financial LLC, member SIPC.
+                </p>
+                <p class="pt-2 text-gray-400">
+                    © <span id="currentYear"></span> Robinhood Markets, Inc. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL: AGENTIC DISCLOSURES -->
+    <div id="disclosureModal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-panel max-w-2xl w-full rounded-2xl p-6 sm:p-8 border border-white/20 text-gray-200 relative max-h-[85vh] overflow-y-auto">
+            <button onclick="closeDisclosureModal()" class="absolute top-5 right-5 p-2 text-gray-400 hover:text-white rounded-lg bg-white/5 hover:bg-white/10">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <div class="space-y-4 text-left">
+                <div class="flex items-center gap-2 text-rh-green text-sm font-mono font-bold uppercase">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i> Compliance Notice
+                </div>
+                <h3 class="text-2xl font-bold text-white">Robinhood Agentic Disclosures</h3>
+                
+                <div class="space-y-3 text-xs sm:text-sm text-gray-300 leading-relaxed pt-2">
+                    <p>
+                        <strong>1. Autonomous Model Authorization:</strong> By generating credentials and connecting an AI agent via the Robinhood Model Context Protocol (MCP) server, you grant your configured AI agent authority to execute trades within the allocated funds of your Agentic Account.
+                    </p>
+                    <p>
+                        <strong>2. Safety &amp; Loss Limits:</strong> While Robinhood implements isolated capital pools and budget guardrails, agent logic, prompt injection vulnerabilities, or technical anomalies in third-party client models are the sole responsibility of the account holder.
+                    </p>
+                    <p>
+                        <strong>3. Market Volatility &amp; Latency:</strong> Quotes provided through the MCP server are subject to network delays and market latency. Automated orders placed during volatile periods may experience slippage.
+                    </p>
+                    <p>
+                        <strong>4. Third-Party References:</strong> References to third parties are for identification or descriptive purposes only and do not imply endorsement, sponsorship, or affiliation.
+                    </p>
+                </div>
+
+                <div class="pt-6 flex justify-end">
+                    <button onclick="closeDisclosureModal()" class="px-6 py-2.5 rounded-full bg-rh-green hover:bg-rh-bright text-black font-semibold text-xs">
+                        I Understand
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Update Year
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // Copy MCP Snippet
+        function copyMcpSnippet() {
+            const snippet = '{\n  "mcpServers": {\n    "robinhood": {\n      "url": "https://mcp.robinhood.com/v1"\n    }\n  }\n}';
+            navigator.clipboard.writeText(snippet).then(() => {
+                const label = document.getElementById('copyBtnLabel');
+                const icon = document.getElementById('copyIcon');
+                label.textContent = 'Copied!';
+                label.classList.add('text-rh-bright');
+                
+                setTimeout(() => {
+                    label.textContent = 'Copy';
+                    label.classList.remove('text-rh-bright');
+                }, 2000);
+            }).catch(err => {
+                console.error('Copy failed: ', err);
+            });
+        }
+
+        // Disclosure Modal Controls
+        function openDisclosureModal() {
+            const modal = document.getElementById('disclosureModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDisclosureModal() {
+            const modal = document.getElementById('disclosureModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close on escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeDisclosureModal();
+            }
+        });
+
+        // Close on backdrop click
+        document.getElementById('disclosureModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDisclosureModal();
+            }
+        });
+
+        // Interactive Terminal Action Simulator
+        const sampleLogs = [
+            {
+                type: 'AGENT',
+                tag: 'TOOL CALL',
+                color: 'text-purple-400',
+                text: 'robinhood.get_quote({ symbol: "NVDA", metrics: ["bid", "ask", "24h_volume"] })'
+            },
+            {
+                type: 'SERVER',
+                tag: 'MCP RESPONSE',
+                color: 'text-rh-green',
+                text: '200 OK -> NVDA: $138.45 (+3.12%), Spread: $0.02, Vol: 48.2M'
+            },
+            {
+                type: 'AGENT',
+                tag: 'DECISION',
+                color: 'text-blue-400',
+                text: 'Alpha signal threshold exceeded (>0.78). Formulating limit order within allocated sub-account budget...'
+            },
+            {
+                type: 'AGENT',
+                tag: 'TOOL CALL',
+                color: 'text-purple-400',
+                text: 'robinhood.place_order({ symbol: "NVDA", side: "buy", qty: 5, type: "limit", price: 138.45, time_in_force: "gtc" })'
+            },
+            {
+                type: 'SERVER',
+                tag: 'FILLED',
+                color: 'text-emerald-400 font-bold',
+                text: 'Order #RH-90218 Filled: Bought 5 NVDA @ $138.45. Notification dispatched to Robinhood Mobile App.'
+            },
+            {
+                type: 'AGENT',
+                tag: 'PORTFOLIO',
+                color: 'text-yellow-400',
+                text: 'Updated sub-account cash: $4,307.75. Active Hedging Options scanner running in background.'
+            }
+        ];
+
+        let logIndex = 0;
+
+        function runSimulationStep() {
+            const stream = document.getElementById('terminalStream');
+            const step = sampleLogs[logIndex % sampleLogs.length];
+            logIndex++;
+
+            const logDiv = document.createElement('div');
+            logDiv.className = 'text-xs leading-relaxed animate-fade-in';
+            logDiv.innerHTML = `
+                <span class="${step.color}">[${step.tag}]</span> 
+                <span class="text-gray-200">${step.text}</span>
+            `;
+            stream.appendChild(logDiv);
+            stream.scrollTop = stream.scrollHeight;
+        }
+
+        function clearTerminal() {
+            const stream = document.getElementById('terminalStream');
+            stream.innerHTML = `
+                <div class="text-gray-400">
+                    <span class="text-blue-400 font-semibold">[AGENT INIT]</span> Initialized Robinhood MCP connection over secure session...
+                </div>
+                <div class="text-gray-400">
+                    <span class="text-yellow-400 font-semibold">[ACCOUNT]</span> Agentic Sub-Account detected. Reserved Trading Capital: <span class="text-white">$5,000.00 USD</span>.
+                </div>
+            `;
+            logIndex = 0;
+        }
+    </script>
+</body>
 </html>

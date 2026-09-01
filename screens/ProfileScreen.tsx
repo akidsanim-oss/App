@@ -1,334 +1,280 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Switch } from 'react-native';
-import { useTheme } from '../lib/theme';
-import { AnimatedTypography } from '../components/AnimatedTypography';
-import { EcoBadge } from '../components/EcoBadge';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Switch, Pressable, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { GlassCard } from '../components/GlassCard';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius, typography, shadows } from '../lib/theme';
+import { getEcoStats, EcoStats } from '../lib/storage';
+import DynamicText from '../components/DynamicText';
+import EcoIndicator from '../components/EcoIndicator';
+import { useNavigation } from '@react-navigation/native';
 
-export const ProfileScreen: React.FC = () => {
-  const { isDark, toggleTheme } = useTheme();
-  const [ecoMode, setEcoMode] = useState(true);
-  const [animations, setAnimations] = useState(true);
-  const [dataSaver, setDataSaver] = useState(false);
-  const [highContrast, setHighContrast] = useState(false);
-  const scale = React.useRef(new Animated.Value(1)).current;
+export default function ProfileScreen() {
+  const navigation = useNavigation<any>();
+  const [ecoStats, setEcoStats] = useState<EcoStats>({ darkModeHours: 0, trendsLearned: 0, carbonSaved: 0, lastUpdated: '' });
+  const [notifications, setNotifications] = useState(true);
+  const [compactMode, setCompactMode] = useState(false);
 
-  const stats = [
-    { label: 'Trends Viewed', value: '42', icon: 'eye', color: '#6366F1' },
-    { label: 'Time Saved', value: '3.2h', icon: 'time', color: '#06B6D4' },
-    { label: 'Eco Score', value: 'A+', icon: 'leaf', color: '#7BB661' },
+  useEffect(() => {
+    getEcoStats().then(setEcoStats);
+  }, []);
+
+  const menuItems = [
+    { icon: 'heart', label: 'Saved Trends', color: colors.error, onPress: () => navigation.navigate('Favorites') },
+    { icon: 'color-palette', label: 'Design Resources', color: colors.accent, onPress: () => {} },
+    { icon: 'download', label: 'Offline Content', color: colors.info, onPress: () => {} },
+    { icon: 'share-social', label: 'Share App', color: colors.eco, onPress: () => {} },
   ];
-
-  const settings = [
-    { key: 'dark', label: 'Dark Mode', icon: 'moon', value: isDark, onToggle: toggleTheme },
-    { key: 'eco', label: 'Eco Mode', icon: 'leaf', value: ecoMode, onToggle: () => setEcoMode(!ecoMode) },
-    { key: 'anim', label: 'Animations', icon: 'flash', value: animations, onToggle: () => setAnimations(!animations) },
-    { key: 'data', label: 'Data Saver', icon: 'wifi', value: dataSaver, onToggle: () => setDataSaver(!dataSaver) },
-    { key: 'contrast', label: 'High Contrast', icon: 'contrast', value: highContrast, onToggle: () => setHighContrast(!highContrast) },
-  ];
-
-  const handlePressIn = () => {
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true }).start();
-  };
-  const handlePressOut = () => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start();
-  };
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? '#0D0D0F' : '#F5F5F0' },
-      ]}
-    >
-      <View style={styles.header}>
-        <AnimatedTypography variant="title">Profile</AnimatedTypography>
-        <Text style={[styles.headerSubtitle, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-          Your preferences & settings
-        </Text>
-      </View>
-
-      {/* Profile Card */}
-      <Animated.View
-        style={[
-          styles.profileCard,
-          {
-            backgroundColor: isDark ? '#161618' : '#FFFFFF',
-            transform: [{ scale }],
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.avatar,
-            { backgroundColor: isDark ? '#2A3A25' : '#E8EDE6' },
-          ]}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Profile Header */}
+        <LinearGradient
+          colors={[colors.gradientStart + '30', colors.gradientEnd + '10']}
+          style={styles.headerCard}
         >
-          <Ionicons
-            name="person"
-            size={32}
-            color={isDark ? '#7BB661' : '#2D5A27'}
-          />
-        </View>
-        <View style={styles.profileInfo}>
-          <Text style={[styles.profileName, { color: isDark ? '#F0F0EB' : '#1A1A1A' }]}>
-            UI Designer
-          </Text>
-          <Text
-            style={[
-              styles.profileRole,
-              { color: isDark ? '#6A6A65' : '#8A8A8A' },
-            ]}
-          >
-            2026 Trend Explorer
-          </Text>
-        </View>
-        <EcoBadge size="sm" />
-      </Animated.View>
+          <View style={styles.avatar}>
+            <Ionicons name="person" size={32} color={colors.text} />
+          </View>
+          <DynamicText variant="h2" style={{ marginTop: spacing.md }}>
+            Designer
+          </DynamicText>
+          <DynamicText variant="bodySmall" color={colors.textMuted}>
+            UI Trends Explorer
+          </DynamicText>
 
-      {/* Stats */}
-      <View style={styles.statsRow}>
-        {stats.map((stat, i) => (
-          <GlassCard key={i} style={styles.statCard} intensity={0.05}>
-            <View
-              style={[
-                styles.statIcon,
-                { backgroundColor: stat.color + '15' },
-              ]}
-            >
-              <Ionicons name={stat.icon as any} size={18} color={stat.color} />
+          <View style={styles.miniStats}>
+            <View style={styles.miniStat}>
+              <DynamicText variant="h4">{ecoStats.trendsLearned}</DynamicText>
+              <DynamicText variant="caption" color={colors.textMuted}>Learned</DynamicText>
             </View>
-            <Text
-              style={[
-                styles.statValue,
-                { color: isDark ? '#F0F0EB' : '#1A1A1A' },
-              ]}
-            >
-              {stat.value}
-            </Text>
-            <Text
-              style={[
-                styles.statLabel,
-                { color: isDark ? '#6A6A65' : '#8A8A8A' },
-              ]}
-            >
-              {stat.label}
-            </Text>
-          </GlassCard>
-        ))}
-      </View>
-
-      {/* Settings */}
-      <View style={styles.section}>
-        <AnimatedTypography variant="subtitle">Settings</AnimatedTypography>
-        <View style={styles.settingsList}>
-          {settings.map((setting, i) => (
-            <View
-              key={setting.key}
-              style={[
-                styles.settingRow,
-                {
-                  backgroundColor: isDark ? '#161618' : '#FFFFFF',
-                  marginTop: i > 0 ? 8 : 0,
-                },
-              ]}
-            >
-              <View style={styles.settingLeft}>
-                <View
-                  style={[
-                    styles.settingIcon,
-                    {
-                      backgroundColor: isDark ? '#2A2A2E' : '#F0F0EB',
-                    },
-                  ]}
-                >
-                  <Ionicons
-                    name={setting.icon as any}
-                    size={18}
-                    color={isDark ? '#7BB661' : '#2D5A27'}
-                  />
-                </View>
-                <Text
-                  style={[
-                    styles.settingLabel,
-                    { color: isDark ? '#F0F0EB' : '#1A1A1A' },
-                  ]}
-                >
-                  {setting.label}
-                </Text>
-              </View>
-              <Switch
-                value={setting.value}
-                onValueChange={setting.onToggle}
-                trackColor={{ false: '#767577', true: '#7BB661' + '80' }}
-                thumbColor={setting.value ? '#7BB661' : '#f4f3f4'}
-                ios_backgroundColor="#3e3e3e"
-              />
+            <View style={styles.divider} />
+            <View style={styles.miniStat}>
+              <DynamicText variant="h4">{ecoStats.darkModeHours}</DynamicText>
+              <DynamicText variant="caption" color={colors.textMuted}>Dark Hrs</DynamicText>
             </View>
-          ))}
-        </View>
-      </View>
+            <View style={styles.divider} />
+            <View style={styles.miniStat}>
+              <DynamicText variant="h4">{ecoStats.carbonSaved}g</DynamicText>
+              <DynamicText variant="caption" color={colors.textMuted}>CO₂ Saved</DynamicText>
+            </View>
+          </View>
+        </LinearGradient>
 
-      {/* About */}
-      <View style={styles.section}>
-        <AnimatedTypography variant="subtitle">About</AnimatedTypography>
-        <View
-          style={[
-            styles.aboutCard,
-            { backgroundColor: isDark ? '#161618' : '#FFFFFF' },
-          ]}
-        >
-          <Text style={[styles.aboutText, { color: isDark ? '#B0B0A8' : '#4A4A4A' }]}>
-            UI Design Trends 2026 is a showcase app demonstrating the latest innovations in interface design. 
-            Built with eco-design principles, dark mode optimization, and immersive 3D interactions.
-          </Text>
-          <View style={styles.aboutMeta}>
-            <Text style={[styles.aboutMetaText, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-              Version 1.0.0
-            </Text>
-            <Text style={[styles.aboutMetaText, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-              Built with React Native & Expo
-            </Text>
+        {/* Eco Impact Section */}
+        <View style={styles.section}>
+          <DynamicText variant="h3" style={{ marginBottom: spacing.md }}>
+            Your Eco Impact
+          </DynamicText>
+          <EcoIndicator label="Total Carbon Saved" value={`${ecoStats.carbonSaved}g CO₂`} icon="leaf" />
+          <View style={[styles.ecoCard, { marginTop: spacing.md }]}>
+            <View style={styles.ecoRow}>
+              <Ionicons name="moon" size={20} color={colors.accent} />
+              <DynamicText variant="body" color={colors.text} style={{ flex: 1, marginLeft: spacing.md }}>
+                Dark Mode Active
+              </DynamicText>
+              <DynamicText variant="bodySmall" color={colors.eco}>
+                Saving 47% energy
+              </DynamicText>
+            </View>
+            <View style={styles.ecoDivider} />
+            <View style={styles.ecoRow}>
+              <Ionicons name="images" size={20} color={colors.warning} />
+              <DynamicText variant="body" color={colors.text} style={{ flex: 1, marginLeft: spacing.md }}>
+                Optimized Assets
+              </DynamicText>
+              <DynamicText variant="bodySmall" color={colors.eco}>
+                60% less data
+              </DynamicText>
+            </View>
+            <View style={styles.ecoDivider} />
+            <View style={styles.ecoRow}>
+              <Ionicons name="text" size={20} color={colors.info} />
+              <DynamicText variant="body" color={colors.text} style={{ flex: 1, marginLeft: spacing.md }}>
+                System Fonts
+              </DynamicText>
+              <DynamicText variant="bodySmall" color={colors.eco}>
+                0 downloads
+              </DynamicText>
+            </View>
           </View>
         </View>
-      </View>
-    </View>
+
+        {/* Settings */}
+        <View style={styles.section}>
+          <DynamicText variant="h3" style={{ marginBottom: spacing.md }}>
+            Preferences
+          </DynamicText>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.accent + '15' }]}>
+                <Ionicons name="notifications" size={18} color={colors.accent} />
+              </View>
+              <DynamicText variant="body">Daily Trend Notifications</DynamicText>
+            </View>
+            <Switch
+              value={notifications}
+              onValueChange={setNotifications}
+              trackColor={{ false: colors.border, true: colors.accent + '80' }}
+              thumbColor={notifications ? colors.accent : colors.textMuted}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.settingIcon, { backgroundColor: colors.warning + '15' }]}>
+                <Ionicons name="contract" size={18} color={colors.warning} />
+              </View>
+              <DynamicText variant="body">Compact Mode</DynamicText>
+            </View>
+            <Switch
+              value={compactMode}
+              onValueChange={setCompactMode}
+              trackColor={{ false: colors.border, true: colors.warning + '80' }}
+              thumbColor={compactMode ? colors.warning : colors.textMuted}
+            />
+          </View>
+        </View>
+
+        {/* Menu */}
+        <View style={styles.section}>
+          <DynamicText variant="h3" style={{ marginBottom: spacing.md }}>
+            Menu
+          </DynamicText>
+          {menuItems.map((item, i) => (
+            <Pressable key={i} style={styles.menuItem} onPress={item.onPress}>
+              <View style={styles.menuLeft}>
+                <View style={[styles.menuIcon, { backgroundColor: item.color + '15' }]}>
+                  <Ionicons name={item.icon as any} size={18} color={item.color} />
+                </View>
+                <DynamicText variant="body">{item.label}</DynamicText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Ionicons name="code-slash" size={14} color={colors.textMuted} />
+          <DynamicText variant="caption" color={colors.textMuted} style={{ marginLeft: 6 }}>
+            UI Trends 2026 v1.0.0
+          </DynamicText>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
+  scrollContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '500',
-  },
-  profileCard: {
-    flexDirection: 'row',
+  headerCard: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
     alignItems: 'center',
-    marginHorizontal: 24,
-    padding: 20,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    shadowOpacity: 0.06,
-    elevation: 3,
+    ...shadows.md,
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    justifyContent: 'center',
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.accent + '40',
   },
-  profileInfo: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  profileName: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  profileRole: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  statsRow: {
+  miniStats: {
     flexDirection: 'row',
-    marginHorizontal: 24,
-    marginTop: 16,
-    gap: 10,
+    marginTop: spacing.lg,
+    gap: spacing.lg,
   },
-  statCard: {
-    flex: 1,
-    padding: 14,
+  miniStat: {
     alignItems: 'center',
-    borderRadius: 20,
   },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+  divider: {
+    width: 1,
+    backgroundColor: colors.border,
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 24,
+    marginTop: spacing.lg,
   },
-  settingsList: {
-    marginTop: 12,
+  ecoCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  ecoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  ecoDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
   },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    shadowOpacity: 0.03,
-    elevation: 1,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   settingLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.md,
   },
   settingIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
+    borderRadius: radius.md,
     alignItems: 'center',
-    marginRight: 12,
+    justifyContent: 'center',
   },
-  settingLabel: {
-    fontSize: 15,
-    fontWeight: '600',
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  aboutCard: {
-    padding: 20,
-    borderRadius: 20,
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    shadowOpacity: 0.04,
-    elevation: 2,
+  menuLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  aboutText: {
-    fontSize: 14,
-    lineHeight: 22,
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  aboutMeta: {
-    marginTop: 16,
-    gap: 4,
-  },
-  aboutMetaText: {
-    fontSize: 12,
-    fontWeight: '500',
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+    paddingBottom: spacing.lg,
   },
 });

@@ -1,209 +1,141 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Animated } from 'react-native';
-import { useTheme } from '../lib/theme';
-import { trends, TrendItem } from '../lib/data';
-import { AnimatedTypography } from '../components/AnimatedTypography';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, FlatList, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MicroButton } from '../components/MicroButton';
+import Animated, {
+  FadeInUp,
+  Layout,
+} from 'react-native-reanimated';
+import { colors, spacing, radius } from '../lib/theme';
+import { trends, Trend } from '../lib/trends';
+import { getFavorites, toggleFavorite } from '../lib/storage';
+import DynamicText from '../components/DynamicText';
+import TrendCard from '../components/TrendCard';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
-const FAVORITES_KEY = '@ui_trends_favorites';
+export default function FavoritesScreen() {
+  const navigation = useNavigation<any>();
+  const [favorites, setFavorites] = useState<Trend[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-export const FavoritesScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { isDark } = useTheme();
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const fadeIn = React.useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    loadFavorites();
-    Animated.timing(fadeIn, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+  const loadFavorites = useCallback(async () => {
+    const favIds = await getFavorites();
+    const favTrends = trends.filter((t) => favIds.includes(t.id));
+    setFavorites(favTrends);
   }, []);
 
-  const loadFavorites = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-      if (stored) setFavorites(JSON.parse(stored));
-    } catch (e) {
-      console.error('Failed to load favorites', e);
-    }
+  useFocusEffect(
+    useCallback(() => {
+      loadFavorites();
+    }, [loadFavorites])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadFavorites();
+    setRefreshing(false);
+  }, [loadFavorites]);
+
+  const handleRemove = async (id: string) => {
+    await toggleFavorite(id);
+    loadFavorites();
   };
 
-  const toggleFavorite = async (id: string) => {
-    const newFavorites = favorites.includes(id)
-      ? favorites.filter(f => f !== id)
-      : [...favorites, id];
-    setFavorites(newFavorites);
-    await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-  };
-
-  const favoriteTrends = trends.filter(t => favorites.includes(t.id));
-
-  const renderItem = ({ item, index }: { item: TrendItem; index: number }) => (
-    <Pressable
-      onPress={() => navigation.navigate('TrendDetail', { id: item.id })}
-    >
-      <View
-        style={[
-          styles.card,
-          {
-            backgroundColor: isDark ? '#161618' : '#FFFFFF',
-            marginTop: index > 0 ? 12 : 0,
-          },
-        ]}
-      >
-        <View
-          style={[
-            styles.cardIcon,
-            { backgroundColor: item.color + '15' },
-          ]}
-        >
-          <Ionicons name={item.icon as any} size={22} color={item.color} />
-        </View>
-        <View style={styles.cardInfo}>
-          <Text style={[styles.cardTitle, { color: isDark ? '#F0F0EB' : '#1A1A1A' }]}>
-            {item.title}
-          </Text>
-          <Text
-            style={[
-              styles.cardSubtitle,
-              { color: isDark ? '#6A6A65' : '#8A8A8A' },
-            ]}
-          >
-            {item.subtitle}
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => toggleFavorite(item.id)}
-          style={styles.favoriteBtn}
-        >
-          <Ionicons
-            name="heart"
-            size={22}
-            color="#FF6B6B"
-          />
+  const renderTrend = ({ item, index }: { item: Trend; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 60)} layout={Layout.springify()}>
+      <View style={styles.cardWrap}>
+        <TrendCard
+          trend={item}
+          onPress={() => navigation.navigate('TrendDetail', { trendId: item.id })}
+        />
+        <Pressable style={styles.removeBtn} onPress={() => handleRemove(item.id)}>
+          <Ionicons name="trash-outline" size={18} color={colors.error} />
         </Pressable>
       </View>
-    </Pressable>
+    </Animated.View>
   );
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor: isDark ? '#0D0D0F' : '#F5F5F0' },
-      ]}
-    >
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <AnimatedTypography variant="title">Favorites</AnimatedTypography>
-        <Text style={[styles.headerSubtitle, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-          {favoriteTrends.length} saved trends
-        </Text>
+        <DynamicText variant="h2">Saved Trends</DynamicText>
+        <DynamicText variant="bodySmall" color={colors.textMuted}>
+          {favorites.length} saved
+        </DynamicText>
       </View>
 
-      <Animated.View style={{ flex: 1, opacity: fadeIn }}>
-        {favoriteTrends.length > 0 ? (
-          <FlatList
-            data={favoriteTrends}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
+      <FlatList
+        data={favorites}
+        renderItem={renderTrend}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons
-              name="heart-outline"
-              size={64}
-              color={isDark ? '#6A6A65' : '#8A8A8A'}
-            />
-            <Text style={[styles.emptyTitle, { color: isDark ? '#F0F0EB' : '#1A1A1A' }]}>
-              No favorites yet
-            </Text>
-            <Text style={[styles.emptyDesc, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-              Explore trends and tap the heart icon to save them here
-            </Text>
-            <View style={{ marginTop: 24, width: 200 }}>
-              <MicroButton
-                title="Explore Trends"
-                icon="compass"
-                onPress={() => navigation.navigate('Explore')}
-                variant="primary"
-                fullWidth
-              />
-            </View>
+            <Ionicons name="heart-outline" size={56} color={colors.textMuted} />
+            <DynamicText variant="h4" color={colors.textMuted} style={{ marginTop: spacing.lg }}>
+              No saved trends
+            </DynamicText>
+            <DynamicText variant="bodySmall" color={colors.textMuted} style={{ marginTop: spacing.sm, textAlign: 'center' }}>
+              Tap the heart icon on any trend to save it here for quick access.
+            </DynamicText>
+            <Pressable
+              style={styles.browseBtn}
+              onPress={() => navigation.navigate('Trends')}
+            >
+              <DynamicText variant="body" color={colors.accent}>
+                Browse Trends
+              </DynamicText>
+              <Ionicons name="arrow-forward" size={18} color={colors.accent} style={{ marginLeft: 4 }} />
+            </Pressable>
           </View>
-        )}
-      </Animated.View>
-    </View>
+        }
+      />
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 16,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '500',
+    padding: spacing.md,
+    paddingBottom: spacing.sm,
   },
   listContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    shadowOpacity: 0.04,
-    elevation: 2,
+  cardWrap: {
+    position: 'relative',
   },
-  cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardInfo: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
-  },
-  favoriteBtn: {
+  removeBtn: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    zIndex: 10,
     padding: 8,
+    backgroundColor: colors.background + 'CC',
+    borderRadius: radius.full,
   },
   empty: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 40,
+    paddingTop: spacing.xxl * 2,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginTop: 16,
-  },
-  emptyDesc: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 8,
-    lineHeight: 20,
+  browseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });

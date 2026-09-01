@@ -1,449 +1,248 @@
-import React, { useRef, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  Dimensions,
-  Animated,
-  ScrollView,
-  Pressable,
-} from 'react-native';
-import { useTheme } from '../lib/theme';
-import { trends, TrendItem } from '../lib/data';
-import { TrendCard } from '../components/TrendCard';
-import { AnimatedTypography, MorphingText } from '../components/AnimatedTypography';
-import { EcoBadge } from '../components/EcoBadge';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, FlatList, RefreshControl, Pressable, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolate,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius, typography, shadows } from '../lib/theme';
+import { trends, dailyTips, Trend } from '../lib/trends';
+import { getEcoStats, EcoStats } from '../lib/storage';
+import DynamicText from '../components/DynamicText';
+import TrendCard from '../components/TrendCard';
+import EcoIndicator from '../components/EcoIndicator';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
-export const HomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
-  const { isDark } = useTheme();
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(30)).current;
+export default function HomeScreen() {
+  const navigation = useNavigation<any>();
+  const [refreshing, setRefreshing] = useState(false);
+  const [ecoStats, setEcoStats] = useState<EcoStats>({ darkModeHours: 0, trendsLearned: 0, carbonSaved: 0, lastUpdated: '' });
+  const [dailyTipIndex] = useState(() => Math.floor(Math.random() * dailyTips.length));
+  const scrollY = useSharedValue(0);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 800, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 800, useNativeDriver: true }),
-    ]).start();
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
+
+  const headerStyle = useAnimatedStyle(() => {
+    const scale = interpolate(scrollY.value, [0, 100], [1, 0.9], Extrapolate.CLAMP);
+    const opacity = interpolate(scrollY.value, [0, 100], [1, 0.8], Extrapolate.CLAMP);
+    return {
+      transform: [{ scale }],
+      opacity,
+    };
+  });
+
+  const tipScale = useSharedValue(1);
+  const tipAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: tipScale.value }],
+  }));
+
+  const loadStats = useCallback(async () => {
+    const stats = await getEcoStats();
+    setEcoStats(stats);
   }, []);
 
-  const featured = trends.filter(t => t.featured);
-  const categories = [
-    { name: 'All', icon: 'grid', count: trends.length },
-    { name: 'Eco', icon: 'leaf', count: trends.filter(t => t.category === 'eco').length },
-    { name: 'Dark', icon: 'moon', count: trends.filter(t => t.category === 'dark').length },
-    { name: 'Minimal', icon: 'remove-circle', count: trends.filter(t => t.category === 'minimal').length },
-    { name: '3D', icon: 'cube', count: trends.filter(t => t.category === '3d').length },
-    { name: 'Motion', icon: 'flash', count: trends.filter(t => t.category === 'micro').length },
-  ];
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
-  const renderFeaturedItem = ({ item, index }: { item: TrendItem; index: number }) => (
-    <TrendCard
-      trend={item}
-      index={index}
-      isLarge
-      onPress={() => navigation.navigate('TrendDetail', { id: item.id })}
-    />
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadStats();
+    setRefreshing(false);
+  }, [loadStats]);
+
+  const featuredTrends = trends.slice(0, 3);
+  const recentTrends = trends.slice(3, 6);
+
+  const renderFeaturedItem = ({ item }: { item: Trend }) => (
+    <View style={{ width: width * 0.8, marginRight: spacing.md }}>
+      <TrendCard
+        trend={item}
+        onPress={() => navigation.navigate('TrendDetail', { trendId: item.id })}
+        featured
+      />
+    </View>
   );
-
-  const renderQuickStat = (label: string, value: string, icon: string, color: string) => {
-    const scale = useRef(new Animated.Value(1)).current;
-
-    return (
-      <Pressable
-        key={label}
-        onPressIn={() => Animated.spring(scale, { toValue: 0.95, useNativeDriver: true }).start()}
-        onPressOut={() => Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()}
-      >
-        <Animated.View
-          style={[
-            styles.statCard,
-            {
-              backgroundColor: isDark ? '#161618' : '#FFFFFF',
-              transform: [{ scale }],
-            },
-          ]}
-        >
-          <View style={[styles.statIcon, { backgroundColor: color + '20' }]}>
-            <Ionicons name={icon as any} size={20} color={color} />
-          </View>
-          <Text style={[styles.statValue, { color: isDark ? '#F0F0EB' : '#1A1A1A' }]}>
-            {value}
-          </Text>
-          <Text style={[styles.statLabel, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}>
-            {label}
-          </Text>
-        </Animated.View>
-      </Pressable>
-    );
-  };
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          backgroundColor: isDark ? '#0D0D0F' : '#F5F5F0',
-          opacity: fadeIn,
-          transform: [{ translateY }],
-        },
-      ]}
-    >
-      <ScrollView
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <Animated.ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.text} />}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View>
-              <AnimatedTypography variant="caption" animated={false}>
-                UI DESIGN TRENDS
-              </AnimatedTypography>
-              <AnimatedTypography variant="hero" style={{ marginTop: 4 }}>
-                2026
-              </AnimatedTypography>
-            </View>
-            <EcoBadge size="md" />
-          </View>
-          <MorphingText
-            text="Discover the future of interface design"
-            style={{ marginTop: 12, maxWidth: width - 80 }}
-          />
-        </View>
-
-        {/* Quick Stats */}
-        <View style={styles.statsRow}>
-          {renderQuickStat('Trends', '7', 'trending-up', '#7BB661')}
-          {renderQuickStat('Adoption', '82%', 'stats-chart', '#6366F1')}
-          {renderQuickStat('Impact', 'High', 'pulse', '#FF6B35')}
-          {renderQuickStat('Innovation', 'A+', 'sparkles', '#F59E0B')}
-        </View>
-
-        {/* Categories */}
-        <View style={styles.section}>
-          <AnimatedTypography variant="subtitle">Categories</AnimatedTypography>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesScroll}
-            style={{ marginTop: 16 }}
+        {/* Animated Header */}
+        <Animated.View style={[styles.header, headerStyle]}>
+          <LinearGradient
+            colors={[colors.gradientStart + '30', colors.gradientEnd + '10']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
           >
-            {categories.map((cat, i) => {
-              const scale = useRef(new Animated.Value(1)).current;
-              return (
-                <Pressable
-                  key={cat.name}
-                  onPressIn={() =>
-                    Animated.spring(scale, { toValue: 0.92, useNativeDriver: true }).start()
-                  }
-                  onPressOut={() =>
-                    Animated.spring(scale, { toValue: 1, useNativeDriver: true }).start()
-                  }
-                  onPress={() => navigation.navigate('Explore', { category: cat.name.toLowerCase() })}
-                >
-                  <Animated.View
-                    style={[
-                      styles.categoryCard,
-                      {
-                        backgroundColor: isDark ? '#161618' : '#FFFFFF',
-                        transform: [{ scale }],
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={cat.icon as any}
-                      size={22}
-                      color={isDark ? '#7BB661' : '#2D5A27'}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryName,
-                        { color: isDark ? '#F0F0EB' : '#1A1A1A' },
-                      ]}
-                    >
-                      {cat.name}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.categoryCount,
-                        { color: isDark ? '#6A6A65' : '#8A8A8A' },
-                      ]}
-                    >
-                      {cat.count} trends
-                    </Text>
-                  </Animated.View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+            <View style={styles.headerTop}>
+              <View>
+                <DynamicText variant="caption" color={colors.textMuted}>TRENDS 2026</DynamicText>
+                <DynamicText variant="h1" interactive onPress={() => {}}>
+                  UI Design
+                </DynamicText>
+                <DynamicText variant="h1" color={colors.accent} interactive onPress={() => {}}>
+                  Forecast
+                </DynamicText>
+              </View>
+              <View style={styles.headerIcon}>
+                <Ionicons name="sparkles" size={32} color={colors.accent} />
+              </View>
+            </View>
+
+            <View style={styles.statsRow}>
+              <EcoIndicator label="Trends Learned" value={String(ecoStats.trendsLearned)} icon="book" />
+              <EcoIndicator label="Carbon Saved" value={`${ecoStats.carbonSaved}g`} icon="leaf" />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Daily Tip */}
+        <Pressable
+          onPressIn={() => { tipScale.value = withSpring(0.98, { stiffness: 300 }); }}
+          onPressOut={() => { tipScale.value = withSpring(1, { stiffness: 300 }); }}
+        >
+          <Animated.View style={[styles.tipCard, tipAnimStyle]}>
+            <View style={styles.tipHeader}>
+              <Ionicons name="bulb" size={18} color={colors.warning} />
+              <DynamicText variant="caption" color={colors.warning} style={{ marginLeft: 6 }}>
+                DAILY TIP
+              </DynamicText>
+            </View>
+            <DynamicText variant="body" color={colors.text}>
+              {dailyTips[dailyTipIndex]}
+            </DynamicText>
+          </Animated.View>
+        </Pressable>
+
+        {/* Featured Section */}
+        <View style={styles.sectionHeader}>
+          <DynamicText variant="h3">Featured Trends</DynamicText>
+          <Pressable onPress={() => navigation.navigate('Trends' as never)}>
+            <DynamicText variant="bodySmall" color={colors.accent}>See All</DynamicText>
+          </Pressable>
         </View>
 
-        {/* Featured Trends */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <AnimatedTypography variant="subtitle">Featured Trends</AnimatedTypography>
-            <Pressable onPress={() => navigation.navigate('Explore')}>
-              <Text style={[styles.seeAll, { color: isDark ? '#7BB661' : '#2D5A27' }]}>
-                See all
-              </Text>
-            </Pressable>
-          </View>
-          <FlatList
-            data={featured}
-            renderItem={renderFeaturedItem}
-            keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingRight: 24, paddingTop: 16 }}
-            onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-              useNativeDriver: true,
-            })}
-            scrollEventThrottle={16}
+        <FlatList
+          data={featuredTrends}
+          renderItem={renderFeaturedItem}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.horizontalList}
+          snapToInterval={width * 0.8 + spacing.md}
+          decelerationRate="fast"
+        />
+
+        {/* Recent Section */}
+        <View style={styles.sectionHeader}>
+          <DynamicText variant="h3">Recent Additions</DynamicText>
+        </View>
+
+        {recentTrends.map((trend) => (
+          <TrendCard
+            key={trend.id}
+            trend={trend}
+            onPress={() => navigation.navigate('TrendDetail', { trendId: trend.id })}
           />
-        </View>
+        ))}
 
-        {/* Trending Now */}
-        <View style={styles.section}>
-          <AnimatedTypography variant="subtitle">Trending Now</AnimatedTypography>
-          <View style={styles.trendingList}>
-            {trends.slice(0, 4).map((trend, i) => {
-              const progress = useRef(new Animated.Value(0)).current;
-              useEffect(() => {
-                Animated.timing(progress, {
-                  toValue: parseInt(trend.stats[0].value) / 100,
-                  duration: 1500,
-                  delay: i * 200,
-                  useNativeDriver: false,
-                }).start();
-              }, []);
-
-              return (
-                <Pressable
-                  key={trend.id}
-                  onPress={() => navigation.navigate('TrendDetail', { id: trend.id })}
-                  style={{ marginTop: i > 0 ? 12 : 0 }}
-                >
-                  <View
-                    style={[
-                      styles.trendingItem,
-                      { backgroundColor: isDark ? '#161618' : '#FFFFFF' },
-                    ]}
-                  >
-                    <View
-                      style={[
-                        styles.trendingIcon,
-                        { backgroundColor: trend.color + '15' },
-                      ]}
-                    >
-                      <Ionicons
-                        name={trend.icon as any}
-                        size={18}
-                        color={trend.color}
-                      />
-                    </View>
-                    <View style={styles.trendingInfo}>
-                      <Text
-                        style={[
-                          styles.trendingTitle,
-                          { color: isDark ? '#F0F0EB' : '#1A1A1A' },
-                        ]}
-                      >
-                        {trend.title}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.trendingSubtitle,
-                          { color: isDark ? '#6A6A65' : '#8A8A8A' },
-                        ]}
-                      >
-                        {trend.subtitle}
-                      </Text>
-                    </View>
-                    <View style={styles.trendingStat}>
-                      <Text
-                        style={[
-                          styles.trendingStatValue,
-                          { color: trend.color },
-                        ]}
-                      >
-                        {trend.stats[0].value}
-                      </Text>
-                      <View style={styles.progressBar}>
-                        <Animated.View
-                          style={[
-                            styles.progressFill,
-                            {
-                              backgroundColor: trend.color,
-                              width: progress.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: ['0%', '100%'],
-                              }),
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
+        {/* Eco Footer */}
+        <View style={styles.ecoFooter}>
+          <Ionicons name="earth" size={20} color={colors.eco} />
+          <DynamicText variant="bodySmall" color={colors.textMuted} style={{ marginLeft: 8, flex: 1 }}>
+            Dark mode is active. You're saving energy with every scroll.
+          </DynamicText>
         </View>
-      </ScrollView>
-    </Animated.View>
+      </Animated.ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingTop: 20,
-    paddingBottom: 40,
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   header: {
-    paddingHorizontal: 24,
-    marginBottom: 24,
+    marginBottom: spacing.lg,
+  },
+  headerGradient: {
+    borderRadius: radius.xl,
+    padding: spacing.xl,
+    ...shadows.md,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: spacing.lg,
+  },
+  headerIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsRow: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    gap: 10,
-    marginBottom: 32,
+    gap: spacing.md,
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 14,
+  tipCard: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: spacing.lg,
+  },
+  tipHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    shadowOpacity: 0.06,
-    elevation: 3,
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    marginTop: 2,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  section: {
-    marginTop: 24,
-    paddingHorizontal: 24,
+    marginBottom: spacing.sm,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: spacing.md,
+    marginTop: spacing.lg,
   },
-  seeAll: {
-    fontSize: 13,
-    fontWeight: '700',
+  horizontalList: {
+    paddingRight: spacing.md,
   },
-  categoriesScroll: {
-    paddingRight: 24,
-    gap: 10,
-  },
-  categoryCard: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
-    shadowOpacity: 0.06,
-    elevation: 3,
-    marginRight: 10,
-  },
-  categoryName: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  categoryCount: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  trendingList: {
-    marginTop: 16,
-  },
-  trendingItem: {
+  ecoFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    shadowOpacity: 0.04,
-    elevation: 2,
-  },
-  trendingIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  trendingInfo: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  trendingTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  trendingSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  trendingStat: {
-    alignItems: 'flex-end',
-    minWidth: 60,
-  },
-  trendingStatValue: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  progressBar: {
-    width: 50,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#E0E0D8',
-    marginTop: 6,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 2,
+    backgroundColor: colors.ecoSoft,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginTop: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.eco + '15',
   },
 });

@@ -1,60 +1,57 @@
-import { createContext, useContext } from 'react';
-
 export const colors = {
-  light: {
-    background: '#F5F5F0',
-    surface: '#FFFFFF',
-    surfaceElevated: '#FAFAF5',
-    primary: '#2D5A27',
-    primaryLight: '#4A7C3F',
-    accent: '#8FBC8F',
-    text: '#1A1A1A',
-    textSecondary: '#4A4A4A',
-    textMuted: '#8A8A8A',
-    border: '#E0E0D8',
-    shadow: '#000000',
-    ecoGreen: '#2D5A27',
-    ecoLeaf: '#4A7C3F',
-    chartBg: '#E8EDE6',
-    danger: '#B85450',
-    success: '#4A7C3F',
-    warning: '#D4A853',
-    darkMode: '#1A1A2E',
-  },
-  dark: {
-    background: '#0D0D0F',
-    surface: '#161618',
-    surfaceElevated: '#1E1E22',
-    primary: '#7BB661',
-    primaryLight: '#98C97F',
-    accent: '#5A9E4E',
-    text: '#F0F0EB',
-    textSecondary: '#B0B0A8',
-    textMuted: '#6A6A65',
-    border: '#2A2A2E',
-    shadow: '#000000',
-    ecoGreen: '#7BB661',
-    ecoLeaf: '#5A9E4E',
-    chartBg: '#1E1E22',
-    danger: '#E67C73',
-    success: '#7BB661',
-    warning: '#E8C547',
-    darkMode: '#0D0D0F',
-  },
+  background: '#0A0A0F',
+  surface: '#12121A',
+  surfaceElevated: '#1A1A24',
+  surfaceGlass: 'rgba(26, 26, 36, 0.72)',
+  border: '#2A2A3A',
+  borderSubtle: '#1E1E2E',
+  text: '#F1F1F4',
+  textSecondary: '#A1A1AA',
+  textMuted: '#6B6B7B',
+  accent: '#8B5CF6',
+  accentSoft: 'rgba(139, 92, 246, 0.15)',
+  success: '#10B981',
+  warning: '#F59E0B',
+  error: '#EF4444',
+  info: '#3B82F6',
+  eco: '#10B981',
+  ecoSoft: 'rgba(16, 185, 129, 0.15)',
+  gradientStart: '#8B5CF6',
+  gradientEnd: '#3B82F6',
 };
 
-export type Theme = 'light' | 'dark';
+export const spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+  xxl: 48,
+};
 
-export interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
-  isDark: boolean;
-}
+export const radius = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  xxl: 32,
+  full: 9999,
+};
 
-export const ThemeContext = createContext<ThemeContextType>({
-  theme: 'dark',
-  toggleTheme: () => {},
-  isDark: true,
-});
+export const typography = {
+  h1: { fontSize: 32, fontWeight: '700' as const, lineHeight: 40, letterSpacing: -0.5 },
+  h2: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32, letterSpacing: -0.3 },
+  h3: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28, letterSpacing: -0.2 },
+  h4: { fontSize: 18, fontWeight: '600' as const, lineHeight: 26, letterSpacing: -0.1 },
+  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24, letterSpacing: 0 },
+  bodySmall: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20, letterSpacing: 0 },
+  caption: { fontSize: 12, fontWeight: '500' as const, lineHeight: 16, letterSpacing: 0.2 },
+  label: { fontSize: 11, fontWeight: '600' as const, lineHeight: 14, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+};
 
-export const useTheme = () => useContext(ThemeContext);
+export const shadows = {
+  sm: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 3 },
+  md: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 },
+  lg: { shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 10 },
+  glow: { shadowColor: '#8B5CF6', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 12, elevation: 0 },
+};

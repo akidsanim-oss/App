@@ -1,205 +1,156 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Dimensions } from 'react-native';
-import { useTheme } from '../lib/theme';
-import { TrendItem } from '../lib/data';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width - 48;
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+} from 'react-native-reanimated';
+import { colors, radius, typography, spacing } from '../lib/theme';
+import { Trend } from '../lib/trends';
+import { isFavorite, toggleFavorite } from '../lib/storage';
+import DynamicText from './DynamicText';
 
 interface TrendCardProps {
-  trend: TrendItem;
+  trend: Trend;
   onPress: () => void;
-  index: number;
-  isLarge?: boolean;
+  featured?: boolean;
 }
 
-export const TrendCard: React.FC<TrendCardProps> = ({ trend, onPress, index, isLarge = false }) => {
-  const { isDark } = useTheme();
-  const scale = useRef(new Animated.Value(1)).current;
-  const rotateX = useRef(new Animated.Value(0)).current;
-  const rotateY = useRef(new Animated.Value(0)).current;
-  const shadow = useRef(new Animated.Value(0.3)).current;
+export default function TrendCard({ trend, onPress, featured = false }: TrendCardProps) {
+  const [fav, setFav] = useState(false);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    isFavorite(trend.id).then(setFav);
+  }, [trend.id]);
+
+  const handleToggleFav = async () => {
+    const result = await toggleFavorite(trend.id);
+    setFav(result);
+  };
 
   const handlePressIn = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, friction: 8 }),
-      Animated.timing(shadow, { toValue: 0.6, duration: 150, useNativeDriver: true }),
-    ]).start();
+    scale.value = withSpring(0.96, { stiffness: 400, damping: 20 });
   };
 
   const handlePressOut = () => {
-    Animated.parallel([
-      Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 6 }),
-      Animated.timing(shadow, { toValue: 0.3, duration: 150, useNativeDriver: true }),
-    ]).start();
+    scale.value = withSpring(1, { stiffness: 400, damping: 20 });
   };
 
-  const animatedStyle = {
-    transform: [
-      { scale },
-      { perspective: 1000 },
-      { rotateX: rotateX.interpolate({ inputRange: [-1, 1], outputRange: ['-5deg', '5deg'] }) },
-      { rotateY: rotateY.interpolate({ inputRange: [-1, 1], outputRange: ['-5deg', '5deg'] }) },
-    ],
-  };
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   return (
-    <Pressable onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut}>
+    <Pressable
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
       <Animated.View
         style={[
           styles.card,
-          isLarge ? styles.largeCard : styles.smallCard,
+          featured && styles.featured,
           animatedStyle,
-          {
-            backgroundColor: isDark ? '#161618' : '#FFFFFF',
-            shadowOpacity: shadow,
-            marginLeft: index === 0 ? 24 : 0,
-          },
+          { borderLeftColor: trend.color, borderLeftWidth: 3 },
         ]}
       >
-        <LinearGradient
-          colors={trend.gradient as [string, string]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.gradient, isLarge ? styles.largeGradient : styles.smallGradient]}
-        >
-          <View style={styles.iconContainer}>
-            <Ionicons
-              name={trend.icon as any}
-              size={isLarge ? 32 : 24}
-              color="#FFFFFF"
-              style={styles.icon}
-            />
+        <View style={styles.header}>
+          <View style={[styles.iconWrap, { backgroundColor: trend.color + '20' }]}>
+            <Ionicons name={trend.icon as any} size={20} color={trend.color} />
           </View>
-          {trend.featured && (
-            <View style={styles.featuredBadge}>
-              <Text style={styles.featuredText}>Featured</Text>
-            </View>
-          )}
-        </LinearGradient>
+          <View style={styles.favBtn}>
+            <Pressable onPress={handleToggleFav} hitSlop={12}>
+              <Ionicons
+                name={fav ? 'heart' : 'heart-outline'}
+                size={22}
+                color={fav ? colors.error : colors.textMuted}
+              />
+            </Pressable>
+          </View>
+        </View>
 
-        <View style={styles.content}>
-          <Text style={[styles.title, { color: isDark ? '#F0F0EB' : '#1A1A1A' }]}>
-            {trend.title}
-          </Text>
-          <Text style={[styles.subtitle, { color: isDark ? '#B0B0A8' : '#4A4A4A' }]}>
-            {trend.subtitle}
-          </Text>
-          {isLarge && (
-            <Text
-              style={[styles.description, { color: isDark ? '#6A6A65' : '#8A8A8A' }]}
-              numberOfLines={2}
-            >
-              {trend.description}
-            </Text>
-          )}
-          <View style={styles.tags}>
-            {trend.tags.slice(0, isLarge ? 3 : 2).map((tag, i) => (
-              <View
-                key={i}
-                style={[styles.tag, { backgroundColor: isDark ? '#2A2A2E' : '#F0F0EB' }]}
-              >
-                <Text style={[styles.tagText, { color: isDark ? '#B0B0A8' : '#4A4A4A' }]}>
-                  {tag}
-                </Text>
-              </View>
-            ))}
+        <DynamicText variant={featured ? 'h3' : 'h4'} style={styles.title}>
+          {trend.title}
+        </DynamicText>
+        <DynamicText variant="bodySmall" color={colors.textSecondary} style={styles.subtitle}>
+          {trend.subtitle}
+        </DynamicText>
+
+        <View style={styles.footer}>
+          <View style={[styles.badge, { backgroundColor: trend.color + '15' }]}>
+            <DynamicText variant="caption" style={[styles.badgeText, { color: trend.color }]}>
+              {trend.category}
+            </DynamicText>
+          </View>
+          <View style={[styles.diffBadge, {
+            backgroundColor: trend.difficulty === 'Beginner' ? colors.ecoSoft :
+              trend.difficulty === 'Intermediate' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+          }]}>
+            <DynamicText variant="caption" style={{
+              color: trend.difficulty === 'Beginner' ? colors.eco :
+                trend.difficulty === 'Intermediate' ? colors.warning : colors.error
+            }}>
+              {trend.difficulty}
+            </DynamicText>
           </View>
         </View>
       </Animated.View>
     </Pressable>
   );
-};
+}
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 24,
-    elevation: 8,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
-  largeCard: {
-    width: CARD_WIDTH,
-    marginRight: 16,
-    marginBottom: 16,
+  featured: {
+    backgroundColor: colors.surfaceElevated,
+    padding: spacing.xl,
   },
-  smallCard: {
-    width: 200,
-    marginRight: 12,
-    marginBottom: 12,
-  },
-  gradient: {
-    padding: 20,
-    position: 'relative',
-  },
-  largeGradient: {
-    padding: 28,
-  },
-  smallGradient: {
-    padding: 20,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backdropFilter: 'blur(10px)',
+    marginBottom: spacing.md,
   },
-  icon: {
-    opacity: 0.95,
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  featuredBadge: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-  },
-  featuredText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  content: {
-    padding: 16,
+  favBtn: {
+    padding: spacing.sm,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.4,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginBottom: 8,
+    marginBottom: spacing.md,
   },
-  description: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  tags: {
+  footer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+    gap: spacing.sm,
   },
-  tag: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+  badge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
-  tagText: {
+  badgeText: {
     fontSize: 11,
-    fontWeight: '600',
+  },
+  diffBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
 });

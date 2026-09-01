@@ -1,393 +1,348 @@
-import React, { useRef, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Animated,
-  Pressable,
-  Dimensions,
-} from 'react-native';
-import { useTheme } from '../lib/theme';
-import { getTrendById, TrendItem } from '../lib/data';
-import { AnimatedTypography, MorphingText } from '../components/AnimatedTypography';
-import { StatPill } from '../components/EcoBadge';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Dimensions } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  Extrapolate,
+  useAnimatedScrollHandler,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors, spacing, radius, typography, shadows } from '../lib/theme';
+import { trends, Trend } from '../lib/trends';
+import { isFavorite, toggleFavorite, updateEcoStats } from '../lib/storage';
+import DynamicText from '../components/DynamicText';
+import EcoIndicator from '../components/EcoIndicator';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
-const FAVORITES_KEY = '@ui_trends_favorites';
 
-export const TrendDetailScreen: React.FC<{ route: any; navigation: any }> = ({
-  route,
-  navigation,
-}) => {
-  const { isDark } = useTheme();
-  const { id } = route.params;
-  const trend = getTrendById(id);
-  const fadeIn = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(40)).current;
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [heartScale, setHeartScale] = useState(new Animated.Value(1));
+export default function TrendDetailScreen() {
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const { trendId } = route.params;
+  const trend = trends.find((t) => t.id === trendId) as Trend;
+
+  const [fav, setFav] = useState(false);
+  const scrollY = useSharedValue(0);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeIn, { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.timing(translateY, { toValue: 0, duration: 700, useNativeDriver: true }),
-    ]).start();
-    checkFavorite();
-  }, []);
+    isFavorite(trendId).then(setFav);
+    updateEcoStats({ trendsLearned: 1 });
+  }, [trendId]);
 
-  const checkFavorite = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-      if (stored) {
-        const favorites = JSON.parse(stored);
-        setIsFavorite(favorites.includes(id));
-      }
-    } catch (e) {}
+  const handleToggleFav = async () => {
+    const result = await toggleFavorite(trendId);
+    setFav(result);
   };
 
-  const toggleFavorite = async () => {
-    try {
-      const stored = await AsyncStorage.getItem(FAVORITES_KEY);
-      const favorites = stored ? JSON.parse(stored) : [];
-      const newFavorites = favorites.includes(id)
-        ? favorites.filter((f: string) => f !== id)
-        : [...favorites, id];
-      await AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-      setIsFavorite(!isFavorite);
-      Animated.sequence([
-        Animated.timing(heartScale, { toValue: 1.3, duration: 150, useNativeDriver: true }),
-        Animated.timing(heartScale, { toValue: 1, duration: 150, useNativeDriver: true }),
-      ]).start();
-    } catch (e) {}
-  };
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+    },
+  });
 
-  if (!trend) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Trend not found</Text>
-      </View>
-    );
-  }
+  const heroStyle = useAnimatedStyle(() => {
+    const scale = interpolate(scrollY.value, [-100, 0], [1.2, 1], Extrapolate.CLAMP);
+    const opacity = interpolate(scrollY.value, [0, 200], [1, 0.3], Extrapolate.CLAMP);
+    return { transform: [{ scale }], opacity };
+  });
+
+  const headerStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(scrollY.value, [150, 200], [0, 1], Extrapolate.CLAMP);
+    return { opacity };
+  });
+
+  const sectionScale = useSharedValue(1);
+  const sectionAnim = useAnimatedStyle(() => ({
+    transform: [{ scale: sectionScale.value }],
+  }));
 
   return (
-    <View style={[styles.container, { backgroundColor: isDark ? '#0D0D0F' : '#F5F5F0' }]}>
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: fadeIn,
-          transform: [{ translateY }],
-        }}
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Floating Header */}
+      <Animated.View style={[styles.floatingHeader, headerStyle]}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </Pressable>
+        <DynamicText variant="h4" style={{ flex: 1, textAlign: 'center', marginRight: 40 }}>
+          {trend.title}
+        </DynamicText>
+      </Animated.View>
+
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Header Gradient */}
+        {/* Hero */}
+        <Animated.View style={[styles.hero, heroStyle]}>
           <LinearGradient
-            colors={trend.gradient as [string, string]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.headerGradient}
+            colors={[trend.color + '40', trend.color + '10']}
+            style={styles.heroGradient}
           >
-            <View style={styles.headerTop}>
-              <Pressable
-                onPress={() => navigation.goBack()}
-                style={styles.backBtn}
-              >
-                <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            <View style={styles.heroTop}>
+              <Pressable onPress={() => navigation.goBack()} style={styles.backBtnHero}>
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
               </Pressable>
-              <Pressable onPress={toggleFavorite}>
-                <Animated.View style={{ transform: [{ scale: heartScale }] }}>
-                  <Ionicons
-                    name={isFavorite ? 'heart' : 'heart-outline'}
-                    size={26}
-                    color={isFavorite ? '#FF6B6B' : '#FFFFFF'}
-                  />
-                </Animated.View>
+              <Pressable onPress={handleToggleFav} style={styles.favBtnHero}>
+                <Ionicons
+                  name={fav ? 'heart' : 'heart-outline'}
+                  size={24}
+                  color={fav ? colors.error : colors.text}
+                />
               </Pressable>
             </View>
 
-            <View style={styles.headerContent}>
-              <View style={styles.headerIcon}>
-                <Ionicons name={trend.icon as any} size={36} color="#FFFFFF" />
+            <View style={[styles.heroIcon, { backgroundColor: trend.color + '25' }]}>
+              <Ionicons name={trend.icon as any} size={48} color={trend.color} />
+            </View>
+
+            <DynamicText variant="h1" style={{ marginTop: spacing.lg, marginBottom: spacing.xs }}>
+              {trend.title}
+            </DynamicText>
+            <DynamicText variant="body" color={colors.textSecondary}>
+              {trend.subtitle}
+            </DynamicText>
+
+            <View style={styles.heroBadges}>
+              <View style={[styles.badge, { backgroundColor: trend.color + '15' }]}>
+                <DynamicText variant="caption" style={{ color: trend.color }}>
+                  {trend.category}
+                </DynamicText>
               </View>
-              <Text style={styles.headerTitle}>{trend.title}</Text>
-              <Text style={styles.headerSubtitle}>{trend.subtitle}</Text>
+              <View style={[styles.badge, {
+                backgroundColor: trend.difficulty === 'Beginner' ? colors.ecoSoft :
+                  trend.difficulty === 'Intermediate' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+              }]}>
+                <DynamicText variant="caption" style={{
+                  color: trend.difficulty === 'Beginner' ? colors.eco :
+                    trend.difficulty === 'Intermediate' ? colors.warning : colors.error
+                }}>
+                  {trend.difficulty}
+                </DynamicText>
+              </View>
             </View>
           </LinearGradient>
+        </Animated.View>
 
-          {/* Content */}
-          <View style={styles.content}>
-            {/* Stats */}
-            <View style={styles.statsRow}>
-              {trend.stats.map((stat, i) => (
-                <StatPill key={i} label={stat.label} value={stat.value} color={trend.color} />
-              ))}
-            </View>
+        {/* Description */}
+        <Pressable
+          onPressIn={() => { sectionScale.value = withSpring(0.99, { stiffness: 300 }); }}
+          onPressOut={() => { sectionScale.value = withSpring(1, { stiffness: 300 }); }}
+        >
+          <Animated.View style={[styles.section, sectionAnim]}>
+            <DynamicText variant="body" color={colors.textSecondary} style={styles.description}>
+              {trend.description}
+            </DynamicText>
+          </Animated.View>
+        </Pressable>
 
-            {/* Description */}
-            <View style={styles.section}>
-              <AnimatedTypography variant="subtitle">About</AnimatedTypography>
-              <Text
-                style={[
-                  styles.description,
-                  { color: isDark ? '#B0B0A8' : '#4A4A4A' },
-                ]}
-              >
-                {trend.description}
-              </Text>
-            </View>
+        {/* Eco Impact */}
+        <View style={styles.section}>
+          <EcoIndicator label="Environmental Impact" value={trend.ecoImpact} icon="leaf" />
+        </View>
 
-            {/* Tags */}
-            <View style={styles.section}>
-              <AnimatedTypography variant="subtitle">Tags</AnimatedTypography>
-              <View style={styles.tagsRow}>
-                {trend.tags.map((tag, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.tag,
-                      {
-                        backgroundColor: isDark ? '#2A2A2E' : '#F0F0EB',
-                        borderColor: trend.color + '30',
-                        borderWidth: 1,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.tagText,
-                        { color: isDark ? '#B0B0A8' : '#4A4A4A' },
-                      ]}
-                    >
-                      {tag}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {/* Design Tips */}
-            <View style={styles.section}>
-              <AnimatedTypography variant="subtitle">Design Tips</AnimatedTypography>
-              <View style={styles.tipsList}>
-                {trend.tips.map((tip, i) => {
-                  const tipScale = useRef(new Animated.Value(1)).current;
-                  return (
-                    <Pressable
-                      key={i}
-                      onPressIn={() =>
-                        Animated.spring(tipScale, {
-                          toValue: 0.97,
-                          useNativeDriver: true,
-                          friction: 8,
-                        }).start()
-                      }
-                      onPressOut={() =>
-                        Animated.spring(tipScale, {
-                          toValue: 1,
-                          useNativeDriver: true,
-                          friction: 6,
-                        }).start()
-                      }
-                    >
-                      <Animated.View
-                        style={[
-                          styles.tipCard,
-                          {
-                            backgroundColor: isDark ? '#161618' : '#FFFFFF',
-                            transform: [{ scale: tipScale }],
-                            marginTop: i > 0 ? 10 : 0,
-                          },
-                        ]}
-                      >
-                        <View
-                          style={[
-                            styles.tipNumber,
-                            { backgroundColor: trend.color + '15' },
-                          ]}
-                        >
-                          <Text style={[styles.tipNumberText, { color: trend.color }]}>
-                            {i + 1}
-                          </Text>
-                        </View>
-                        <Text
-                          style={[
-                            styles.tipText,
-                            { color: isDark ? '#F0F0EB' : '#1A1A1A' },
-                          ]}
-                        >
-                          {tip}
-                        </Text>
-                      </Animated.View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-
-            {/* Action Button */}
-            <View style={styles.actionArea}>
-              <Pressable
-                onPress={() => navigation.navigate('Gallery')}
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: trend.color },
-                ]}
-              >
-                <Ionicons name="cube" size={20} color="#FFFFFF" />
-                <Text style={styles.actionBtnText}>Explore in 3D Gallery</Text>
-              </Pressable>
-            </View>
+        {/* Details */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="list" size={18} color={colors.accent} />
+            <DynamicText variant="h4" style={{ marginLeft: 8 }}>
+              Key Details
+            </DynamicText>
           </View>
-        </ScrollView>
-      </Animated.View>
-    </View>
+          {trend.details.map((detail, i) => (
+            <View key={i} style={styles.detailRow}>
+              <View style={[styles.bullet, { backgroundColor: trend.color }]} />
+              <DynamicText variant="body" color={colors.textSecondary} style={{ flex: 1 }}>
+                {detail}
+              </DynamicText>
+            </View>
+          ))}
+        </View>
+
+        {/* Best Practices */}
+        <View style={styles.section}>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.eco} />
+            <DynamicText variant="h4" style={{ marginLeft: 8 }}>
+              Best Practices
+            </DynamicText>
+          </View>
+          {trend.bestPractices.map((practice, i) => (
+            <View key={i} style={styles.practiceCard}>
+              <View style={styles.practiceNumber}>
+                <DynamicText variant="caption" color={colors.background}>{i + 1}</DynamicText>
+              </View>
+              <DynamicText variant="bodySmall" color={colors.textSecondary} style={{ flex: 1 }}>
+                {practice}
+              </DynamicText>
+            </View>
+          ))}
+        </View>
+
+        {/* Related Trends */}
+        <View style={styles.section}>
+          <DynamicText variant="h4" style={{ marginBottom: spacing.md }}>
+            Related Trends
+          </DynamicText>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {trends
+              .filter((t) => t.id !== trend.id && t.category === trend.category)
+              .map((related) => (
+                <Pressable
+                  key={related.id}
+                  onPress={() => navigation.navigate('TrendDetail', { trendId: related.id })}
+                >
+                  <View style={[styles.relatedCard, { borderLeftColor: related.color }]}>
+                    <Ionicons name={related.icon as any} size={20} color={related.color} />
+                    <DynamicText variant="bodySmall" style={{ marginTop: 4 }}>
+                      {related.title}
+                    </DynamicText>
+                  </View>
+                </Pressable>
+              ))}
+          </ScrollView>
+        </View>
+      </Animated.ScrollView>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-  headerGradient: {
-    paddingTop: 20,
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
-  },
-  headerTop: {
+  floatingHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingTop: 8,
+    paddingBottom: 8,
+    backgroundColor: colors.background + 'E6',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
   backBtn: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
   },
-  headerContent: {
-    alignItems: 'center',
-    marginTop: 24,
+  scrollContent: {
+    paddingBottom: spacing.xxl,
   },
-  headerIcon: {
+  hero: {
+    margin: spacing.md,
+    borderRadius: radius.xl,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  heroGradient: {
+    padding: spacing.xl,
+    borderRadius: radius.xl,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  backBtnHero: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.background + '80',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  favBtnHero: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.background + '80',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heroIcon: {
     width: 72,
     height: 72,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
+    borderRadius: radius.xl,
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
   },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: -0.8,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 4,
-  },
-  content: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  statsRow: {
+  heroBadges: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 28,
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  badge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
   section: {
-    marginTop: 24,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
   },
   description: {
-    fontSize: 15,
-    lineHeight: 24,
-    marginTop: 12,
+    lineHeight: 26,
   },
-  tagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 12,
-  },
-  tag: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-  },
-  tagText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  tipsList: {
-    marginTop: 12,
-  },
-  tipCard: {
+  sectionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    shadowOpacity: 0.04,
-    elevation: 2,
+    marginBottom: spacing.md,
   },
-  tipNumber: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 14,
-  },
-  tipNumberText: {
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  tipText: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
-  },
-  actionArea: {
-    marginTop: 32,
-    marginBottom: 16,
-  },
-  actionBtn: {
+  detailRow: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  bullet: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    marginTop: 8,
+  },
+  practiceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.md,
+  },
+  practiceNumber: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.eco,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 18,
-    gap: 10,
   },
-  actionBtnText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+  relatedCard: {
+    width: 140,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginRight: spacing.md,
+    borderLeftWidth: 3,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
 });
